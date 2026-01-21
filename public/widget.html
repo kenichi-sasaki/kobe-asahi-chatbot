@@ -1,0 +1,454 @@
+<!-- 
+神戸朝日病院 チャットボットウィジェット
+ホームページの</body>タグの直前に以下のコードを貼り付けてください
+-->
+
+<!-- チャットボットのスタイル -->
+<style>
+    .kah-chatbot-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .kah-chatbot-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0066cc 0%, #004d99 100%);
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .kah-chatbot-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .kah-chatbot-button svg {
+        width: 32px;
+        height: 32px;
+        fill: white;
+    }
+
+    .kah-chatbot-window {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 380px;
+        height: 550px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .kah-chatbot-window.open {
+        display: flex;
+    }
+
+    .kah-chatbot-header {
+        background: linear-gradient(135deg, #0066cc 0%, #004d99 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .kah-chatbot-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .kah-chatbot-header p {
+        margin: 4px 0 0 0;
+        font-size: 13px;
+        opacity: 0.9;
+    }
+
+    .kah-close-button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    .kah-close-button:hover {
+        opacity: 1;
+    }
+
+    .kah-chatbot-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    .kah-message {
+        margin-bottom: 16px;
+        display: flex;
+        animation: kahFadeIn 0.3s ease-in;
+    }
+
+    @keyframes kahFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .kah-message.user {
+        justify-content: flex-end;
+    }
+
+    .kah-message-bubble {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        line-height: 1.5;
+        font-size: 14px;
+    }
+
+    .kah-message.bot .kah-message-bubble {
+        background: white;
+        color: #333;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .kah-message.user .kah-message-bubble {
+        background: #0066cc;
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .kah-chatbot-input-container {
+        padding: 16px;
+        background: white;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        gap: 8px;
+    }
+
+    .kah-chatbot-input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #dee2e6;
+        border-radius: 24px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .kah-chatbot-input:focus {
+        border-color: #0066cc;
+    }
+
+    .kah-send-button {
+        background: #0066cc;
+        border: none;
+        color: white;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+    .kah-send-button:hover:not(:disabled) {
+        background: #0052a3;
+    }
+
+    .kah-send-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .kah-send-button svg {
+        width: 20px;
+        height: 20px;
+        fill: white;
+    }
+
+    .kah-typing-indicator {
+        display: flex;
+        gap: 4px;
+        padding: 12px 16px;
+    }
+
+    .kah-typing-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #999;
+        animation: kahTyping 1.4s infinite;
+    }
+
+    .kah-typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .kah-typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes kahTyping {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .kah-suggestion-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .kah-suggestion-chip {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 16px;
+        padding: 8px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .kah-suggestion-chip:hover {
+        background: #f8f9fa;
+        border-color: #0066cc;
+        color: #0066cc;
+    }
+
+    @media (max-width: 768px) {
+        .kah-chatbot-window {
+            width: calc(100vw - 40px);
+            height: calc(100vh - 140px);
+            bottom: 90px;
+            right: 20px;
+        }
+    }
+
+    .kah-chatbot-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .kah-chatbot-messages::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .kah-chatbot-messages::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 3px;
+    }
+
+    .kah-chatbot-messages::-webkit-scrollbar-thumb:hover {
+        background: #999;
+    }
+</style>
+
+<!-- チャットボットウィジェット HTML -->
+<div class="kah-chatbot-container">
+    <button class="kah-chatbot-button" id="kah-chatbot-toggle">
+        <svg viewBox="0 0 24 24">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            <path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/>
+        </svg>
+    </button>
+
+    <div class="kah-chatbot-window" id="kah-chatbot-window">
+        <div class="kah-chatbot-header">
+            <div>
+                <h3>神戸朝日病院</h3>
+                <p>お気軽にご質問ください</p>
+            </div>
+            <button class="kah-close-button" id="kah-close-chatbot">×</button>
+        </div>
+
+        <div class="kah-chatbot-messages" id="kah-chatbot-messages">
+            <div class="kah-message bot">
+                <div class="kah-message-bubble">
+                    こんにちは!神戸朝日病院の案内AIアシスタントです。<br><br>
+                    症状やご質問をお聞かせいただければ、適切な診療科や診療時間をご案内いたします。
+                    <div class="kah-suggestion-chips">
+                        <div class="kah-suggestion-chip" data-message="お腹が痛いのですが、何科を受診すればいいですか?">お腹の痛み</div>
+                        <div class="kah-suggestion-chip" data-message="診療時間を教えてください">診療時間</div>
+                        <div class="kah-suggestion-chip" data-message="病院へのアクセス方法を教えてください">アクセス</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="kah-chatbot-input-container">
+            <input 
+                type="text" 
+                class="kah-chatbot-input" 
+                id="kah-chatbot-input" 
+                placeholder="メッセージを入力..."
+                autocomplete="off"
+            >
+            <button class="kah-send-button" id="kah-send-button">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- チャットボットのスクリプト -->
+<script>
+(function() {
+    // 設定（本番環境では実際のサーバーURLに変更してください）
+    const CHATBOT_API = 'https://your-server.com/api/chat'; // ← ここを変更
+
+    // DOM要素
+    const chatbotToggle = document.getElementById('kah-chatbot-toggle');
+    const chatbotWindow = document.getElementById('kah-chatbot-window');
+    const closeChatbot = document.getElementById('kah-close-chatbot');
+    const chatbotMessages = document.getElementById('kah-chatbot-messages');
+    const chatbotInput = document.getElementById('kah-chatbot-input');
+    const sendButton = document.getElementById('kah-send-button');
+
+    let conversationHistory = [];
+
+    // チャットウィンドウの開閉
+    chatbotToggle.addEventListener('click', () => {
+        chatbotWindow.classList.toggle('open');
+        if (chatbotWindow.classList.contains('open')) {
+            chatbotInput.focus();
+        }
+    });
+
+    closeChatbot.addEventListener('click', () => {
+        chatbotWindow.classList.remove('open');
+    });
+
+    // メッセージを追加
+    function addMessage(content, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `kah-message ${isUser ? 'user' : 'bot'}`;
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'kah-message-bubble';
+        bubbleDiv.innerHTML = content.replace(/\n/g, '<br>');
+        
+        messageDiv.appendChild(bubbleDiv);
+        chatbotMessages.appendChild(messageDiv);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+
+    // タイピングインジケーター
+    function showTyping() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'kah-message bot';
+        typingDiv.id = 'kah-typing-indicator';
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'kah-message-bubble kah-typing-indicator';
+        bubbleDiv.innerHTML = '<div class="kah-typing-dot"></div><div class="kah-typing-dot"></div><div class="kah-typing-dot"></div>';
+        
+        typingDiv.appendChild(bubbleDiv);
+        chatbotMessages.appendChild(typingDiv);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+
+    function hideTyping() {
+        const typingIndicator = document.getElementById('kah-typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    // メッセージ送信
+    async function sendMessage() {
+        const message = chatbotInput.value.trim();
+        if (!message) return;
+
+        addMessage(message, true);
+        chatbotInput.value = '';
+        sendButton.disabled = true;
+        showTyping();
+
+        try {
+            const response = await fetch(CHATBOT_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    conversationHistory: conversationHistory
+                })
+            });
+
+            hideTyping();
+
+            if (!response.ok) {
+                throw new Error('サーバーエラー');
+            }
+
+            const data = await response.json();
+            addMessage(data.message);
+            conversationHistory = data.conversationHistory || [];
+
+        } catch (error) {
+            hideTyping();
+            console.error('Error:', error);
+            addMessage('申し訳ございません。エラーが発生しました。もう一度お試しください。');
+        } finally {
+            sendButton.disabled = false;
+            chatbotInput.focus();
+        }
+    }
+
+    // イベントリスナー
+    sendButton.addEventListener('click', sendMessage);
+    chatbotInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // サジェスションチップ
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('kah-suggestion-chip')) {
+            const message = e.target.getAttribute('data-message');
+            chatbotInput.value = message;
+            sendMessage();
+        }
+    });
+})();
+</script>
