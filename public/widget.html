@@ -330,8 +330,8 @@
 <!-- チャットボットのスクリプト -->
 <script>
 (function() {
-    // 設定（本番環境では実際のサーバーURLに変更してください）
-    const CHATBOT_API = 'https://your-server.com/api/chat'; // ← ここを変更
+    // 設定（自動的に現在のURLを使用）
+    const CHATBOT_API = window.location.origin + '/api/chat';
 
     // DOM要素
     const chatbotToggle = document.getElementById('kah-chatbot-toggle');
